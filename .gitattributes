@@ -1,0 +1,8 @@
+# The fixture photographs are copyrighted (see ui/tests/fixtures/LICENSE) and
+# ship only in the git repository itself — never in source archives
+# ("Download ZIP", `git archive`, release tarballs). Running the golden and
+# parity tests therefore requires a git clone.
+ui/tests/fixtures/ export-ignore
+
+# JPEGs are binary — never diff or convert line endings.
+*.jpg binary

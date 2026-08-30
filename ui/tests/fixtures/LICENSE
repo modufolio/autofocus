@@ -1,0 +1,17 @@
+FIXTURE PHOTOGRAPHS — LICENSE NOTICE
+
+The photographs in this directory tree are copyright (c) Maarten Thiebou.
+All rights reserved. They are NOT covered by the MIT license that applies
+to the rest of this repository.
+
+They are licensed solely for:
+
+  - running and developing the automated tests of this repository,
+  - redistribution as part of this repository and verbatim forks of it.
+
+Any other use is prohibited without written permission from the copyright
+holder — including publication, commercial use, extraction into other
+projects or datasets, and use as training data for machine-learning models.
+
+The hand-set focus coordinates in fixtures.json are part of the test suite
+and are covered by the repository's MIT license; the image files are not.

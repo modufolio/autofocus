@@ -1,0 +1,36 @@
+[package]
+name = "autofocus_wasm"
+version = "0.1.0"
+edition = "2021"
+description = "Content-aware focal-point detection for photographs — Rust/WASM + native CLI"
+license = "MIT"
+repository = "https://github.com/modufolio/autofocus"
+readme = "../README.md"
+keywords = ["image", "crop", "focal-point", "saliency", "wasm"]
+categories = ["multimedia::images", "computer-vision", "wasm"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "autofocus"
+path = "src/main.rs"
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+
+# Native-only dependencies (not compiled into the WASM bundle)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
+clap  = { version = "4",    features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-O3", "--enable-simd"]

@@ -1,0 +1,6 @@
+ui/node_modules/
+ui/wasm/
+ui/wasm-node/
+ui/dist/
+rust/target/
+/.idea

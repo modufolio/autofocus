@@ -1,0 +1,56 @@
+{
+  "name": "@modufolio/autofocus",
+  "version": "0.1.0",
+  "description": "Content-aware crop focus for photography sites: a Rust/WASM detector with a JS fallback, plus a saliency debug overlay.",
+  "license": "MIT",
+  "type": "module",
+  "author": "Maarten Thiebou",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "build:wasm": "cd ../rust && wasm-pack build --target web --out-dir ../ui/wasm",
+    "build:wasm:node": "cd ../rust && wasm-pack build --target nodejs --release --out-dir ../ui/wasm-node",
+    "test:parity": "npm run build:wasm:node && (cd ../rust && cargo build --release) && vitest run tests/parity.spec.js"
+  },
+  "devDependencies": {
+    "jpeg-js": "^0.4.4",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^4.0.18"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modufolio/autofocus.git",
+    "directory": "ui"
+  },
+  "homepage": "https://github.com/modufolio/autofocus/tree/main/ui#readme",
+  "bugs": "https://github.com/modufolio/autofocus/issues",
+  "keywords": [
+    "photography",
+    "crop",
+    "focus",
+    "saliency",
+    "wasm",
+    "rust",
+    "smart-crop",
+    "face-detection"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

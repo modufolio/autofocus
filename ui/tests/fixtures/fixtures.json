@@ -1,0 +1,414 @@
+{
+  "_comment": "Golden focus points, hand-set by the photographer. Coordinates are normalised [0,1] relative to the image. Photos are grouped by the album they belong to; album folders are deliberately anonymous. The photographs are NOT MIT-licensed \u2014 see the LICENSE file in this directory.",
+  "albums": {
+    "album-01": {
+      "photos": [
+        {
+          "file": "01a054d4-bd58-723c-beef-918ccd2a2c99.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.33,
+            "y": 0.53
+          }
+        },
+        {
+          "file": "01a054d4-bd59-7d13-b03a-9cc847eeea1e.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.5,
+            "y": 0.43
+          }
+        },
+        {
+          "file": "01a054d4-bd59-72aa-a660-8da42aff9d20.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.36,
+            "y": 0.23
+          }
+        },
+        {
+          "file": "01a054d4-bd59-7de4-9f88-6f2dc271412e.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.67,
+            "y": 0.19
+          }
+        }
+      ]
+    },
+    "album-02": {
+      "photos": [
+        {
+          "file": "01a054d4-bd59-7b60-93ae-3a22059a33a9.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.46,
+            "y": 0.59
+          }
+        },
+        {
+          "file": "01a054d4-bd59-77f5-81ea-c284b28286af.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.46,
+            "y": 0.3
+          }
+        }
+      ]
+    },
+    "album-03": {
+      "photos": [
+        {
+          "file": "01a054d4-bd59-766f-bd2b-08ba81159f9e.jpg",
+          "width": 2000,
+          "height": 1335,
+          "focus": {
+            "x": 0.65,
+            "y": 0.33
+          }
+        },
+        {
+          "file": "01a054d4-bd59-7be9-bdea-7f268a4c0270.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.54,
+            "y": 0.45
+          }
+        },
+        {
+          "file": "01a054d4-bd5a-7234-8c52-b8c58b44469e.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.6,
+            "y": 0.54
+          }
+        },
+        {
+          "file": "01a054d4-bd5a-7d5c-b18b-a9f0a73d98de.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.65,
+            "y": 0.27
+          }
+        },
+        {
+          "file": "01a054d4-bd5a-7c49-b5fd-81c144a5f2dc.jpg",
+          "width": 2500,
+          "height": 1666,
+          "focus": {
+            "x": 0.43,
+            "y": 0.42
+          }
+        },
+        {
+          "file": "01a054d4-bd5a-7af9-8dce-fdda86341d8d.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.61,
+            "y": 0.53
+          }
+        },
+        {
+          "file": "01a054d4-bd5a-79a8-8649-b8eaa3f904a1.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.51,
+            "y": 0.57
+          }
+        }
+      ]
+    },
+    "album-04": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5a-79ce-8684-098a96cd2d8b.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.4,
+            "y": 0.14
+          }
+        }
+      ]
+    },
+    "album-05": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5a-7eae-8b5f-c956b218ab20.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.55,
+            "y": 0.5
+          }
+        },
+        {
+          "file": "01a054d4-bd5b-7c06-973e-31554a9bd3b7.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.44,
+            "y": 0.43
+          }
+        },
+        {
+          "file": "01a054d4-bd5b-778b-a4f8-4da3185b7a83.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.66,
+            "y": 0.61
+          }
+        }
+      ]
+    },
+    "album-06": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5b-7d26-a7b2-df020c56bd3d.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.49,
+            "y": 0.37
+          }
+        },
+        {
+          "file": "01a054d4-bd5b-7e11-ba36-d2e66f82b894.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.51,
+            "y": 0.25
+          }
+        },
+        {
+          "file": "01a054d4-bd5b-77a6-b367-b01165a7422d.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.55,
+            "y": 0.36
+          }
+        },
+        {
+          "file": "01a054d4-bd5b-7620-8aea-dcef218e53a4.jpg",
+          "width": 2500,
+          "height": 1668,
+          "focus": {
+            "x": 0.42,
+            "y": 0.33
+          }
+        }
+      ]
+    },
+    "album-07": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5b-79c0-88bc-51478d97aeb9.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.59,
+            "y": 0.12
+          }
+        },
+        {
+          "file": "01a054d4-bd5c-7653-9257-91f3ccead6ad.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.49,
+            "y": 0.36
+          }
+        },
+        {
+          "file": "01a054d4-bd5c-7300-b997-e169e59c56df.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.5,
+            "y": 0.19
+          }
+        },
+        {
+          "file": "01a054d4-bd5c-7277-8561-69c05855e1ff.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.38,
+            "y": 0.24
+          }
+        },
+        {
+          "file": "01a054d4-bd5c-78b7-a844-58676caf9fcd.jpg",
+          "width": 1500,
+          "height": 1000,
+          "focus": {
+            "x": 0.44,
+            "y": 0.15
+          }
+        }
+      ]
+    },
+    "album-08": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5c-7371-90b4-da54d1579195.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.41,
+            "y": 0.5
+          }
+        },
+        {
+          "file": "01a054d4-bd5c-77e4-84c6-a9131bbbe047.jpg",
+          "width": 1500,
+          "height": 1001,
+          "focus": {
+            "x": 0.47,
+            "y": 0.55
+          }
+        }
+      ]
+    },
+    "album-09": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5c-71d4-9631-3680a1c67ece.jpg",
+          "width": 1498,
+          "height": 1000,
+          "focus": {
+            "x": 0.74,
+            "y": 0.41
+          }
+        },
+        {
+          "file": "01a054d4-bd5c-73f9-96a3-0407db48d3fd.jpg",
+          "width": 1498,
+          "height": 1000,
+          "focus": {
+            "x": 0.39,
+            "y": 0.28
+          }
+        },
+        {
+          "file": "01a054d4-bd5d-75a0-80eb-224499d3a86e.jpg",
+          "width": 1498,
+          "height": 1000,
+          "focus": {
+            "x": 0.47,
+            "y": 0.24
+          }
+        },
+        {
+          "file": "01a054d4-bd5d-7c82-ac4c-5eaf6ee63811.jpg",
+          "width": 1498,
+          "height": 1000,
+          "focus": {
+            "x": 0.59,
+            "y": 0.24
+          }
+        },
+        {
+          "file": "01a054d4-bd5d-7888-8c77-7bfce1fca9e5.jpg",
+          "width": 1498,
+          "height": 1000,
+          "focus": {
+            "x": 0.46,
+            "y": 0.37
+          }
+        }
+      ]
+    },
+    "album-10": {
+      "photos": [
+        {
+          "file": "01a054d4-bd5d-70ec-8466-c60a5d617265.jpg",
+          "width": 1199,
+          "height": 800,
+          "focus": {
+            "x": 0.62,
+            "y": 0.32
+          }
+        },
+        {
+          "file": "01a054d4-bd5d-7d8a-bcf7-89543c111907.jpg",
+          "width": 1198,
+          "height": 800,
+          "focus": {
+            "x": 0.53,
+            "y": 0.3
+          }
+        },
+        {
+          "file": "01a054d4-bd5d-7246-a021-97b957c4fc8e.jpg",
+          "width": 1198,
+          "height": 800,
+          "focus": {
+            "x": 0.46,
+            "y": 0.19
+          }
+        },
+        {
+          "file": "01a054d4-bd5d-751b-8d28-e28ea331d5f0.jpg",
+          "width": 1199,
+          "height": 800,
+          "focus": {
+            "x": 0.45,
+            "y": 0.25
+          }
+        },
+        {
+          "file": "01a054d4-bd5e-7050-86f2-5f74988e458d.jpg",
+          "width": 1198,
+          "height": 800,
+          "focus": {
+            "x": 0.68,
+            "y": 0.15
+          }
+        },
+        {
+          "file": "01a054d4-bd5e-71ca-9b9b-fff8a6f9bde3.jpg",
+          "width": 1198,
+          "height": 800,
+          "focus": {
+            "x": 0.69,
+            "y": 0.12
+          }
+        },
+        {
+          "file": "01a054d4-bd5e-727e-9764-568819cc9555.jpg",
+          "width": 1198,
+          "height": 800,
+          "focus": {
+            "x": 0.55,
+            "y": 0.24
+          }
+        },
+        {
+          "file": "01a054d4-bd5e-75dd-8395-707d863d4164.jpg",
+          "width": 1198,
+          "height": 800,
+          "focus": {
+            "x": 0.52,
+            "y": 0.25
+          }
+        }
+      ]
+    }
+  }
+}
