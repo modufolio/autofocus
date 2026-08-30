@@ -1,7 +1,7 @@
 {
   "name": "@modufolio/autofocus",
-  "version": "0.1.0",
-  "description": "Content-aware crop focus for photography sites: a Rust/WASM detector with a JS fallback, plus a saliency debug overlay.",
+  "version": "0.1.1",
+  "description": "Content-aware crop focus for photography sites \u2014 a Rust/WASM focal-point detector that keeps the subject in the frame.",
   "license": "MIT",
   "type": "module",
   "author": "Maarten Thiebou",
