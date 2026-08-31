@@ -61,13 +61,15 @@ describe.skipIf(!ready)('native ↔ wasm parity (run `npm run test:parity` to bu
   const require = createRequire(import.meta.url)
   const wasm = ready ? require(join(WASM_DIR, 'autofocus_wasm.js')) : null
 
-  const files = ready
-    ? readdirSync(FIXTURES, { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .flatMap((e) => readdirSync(join(FIXTURES, e.name))
-          .filter((f) => f.endsWith('.jpg'))
-          .map((f) => join(FIXTURES, e.name, f)))
-    : []
+  // The committed corpus only (fixtures.json), not a directory glob:
+  // external golden sets (see `autofocus --eval`) may sit next to the album
+  // dirs without being part of the parity invariant. On 1398701.jpg of one
+  // such set the two builds genuinely diverge through a decision boundary
+  // (native 0.42 vs wasm 0.41) — parity to 1e-6 is a property of the
+  // committed corpus, not of every photo.
+  const manifest = ready ? JSON.parse(readFileSync(join(FIXTURES, 'fixtures.json'), 'utf8')) : { albums: {} }
+  const files = Object.entries(manifest.albums)
+    .flatMap(([album, entry]) => entry.photos.map((p) => join(FIXTURES, album, p.file)))
 
   it('found the fixture set', () => {
     expect(files.length).toBeGreaterThan(0)

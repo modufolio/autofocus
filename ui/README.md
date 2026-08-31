@@ -21,13 +21,15 @@ const { point } = await detectFocus(imgElement)   // → { x, y } in [0,1]
 
 ## The WASM module
 
-The detector runs as WebAssembly, fetched at runtime from your app's
-`/assets/wasm/autofocus/` — it is deliberately **not** bundled in this package.
-Build it per app from the Rust crate in this repository:
+The detector runs as WebAssembly, shipped inside this package (`wasm/`,
+~60 KB gzipped) and loaded automatically — `npm install` is all it takes.
+The loader tries, in order:
 
-```bash
-cd rust && wasm-pack build --target web --out-dir <app>/public/assets/wasm/autofocus
-```
+1. `globalThis.AUTOFOCUS_WASM_BASE` — set this (before the first import)
+   to a directory URL if you self-host the two `wasm/` files somewhere else.
+2. The package's own `wasm/` directory, relative to the loaded module.
+3. `/assets/wasm/autofocus/` on the page origin — the pre-0.2 layout, so
+   deploys that copy the files there keep working unchanged.
 
 There is no JS implementation of the algorithm — the Rust crate is the
 single implementation, and the package returns null when WASM is
