@@ -569,6 +569,28 @@ impl FocusRule for SaliencySnap {
         // faces sit near legitimate bright anomalies.
         if snap_saliency || (color_snap && pupil_count == 0) {
             let (px, py) = saliency_peak(&feat.lum, w, h);
+            // Face-region veto (colour snap only): when the pipeline found a
+            // face region — even one too weak for the lock to act on — a
+            // saliency peak far OUTSIDE that region is a prop or print
+            // out-saliencing a person, not a better subject. Peaks near the
+            // region (the group-shot bright-anomaly cases) still snap.
+            if !snap_saliency {
+                if let Some(f) = st.face.as_ref() {
+                    if !f.face_blocks.is_empty() {
+                        let (rx, ry, rw, rh) = f.rect;
+                        let m = 0.12 * w.max(h) as f32;
+                        let (pxp, pyp) = (px * w as f32, py * h as f32);
+                        let outside = pxp < rx - m || pxp > rx + rw + m
+                            || pyp < ry - m || pyp > ry + rh + m;
+                        dbg_focus!("colour snap face-region gate: peak ({:.2},{:.2}) rect ({:.0},{:.0},{:.0},{:.0}) outside={}", px, py, rx, ry, rw, rh, outside);
+                        if outside {
+                            st.x = locked_x;
+                            st.y = locked_y;
+                            return;
+                        }
+                    }
+                }
+            }
             // Colour peaks are lower-quality than mono (measured: scene top-1
             // hit 21% vs mono's snap wins), so the colour snap gets a shorter
             // leash: the measured wins all snapped from <= 0.112 away, the

@@ -16,9 +16,11 @@
  * byte-for-byte against values the web pipeline produced.
  */
 
+mod render;
+
 use std::{
     io::{self, BufRead},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process,
     time::Instant,
 };
@@ -63,6 +65,17 @@ struct Cli {
     #[arg(long)]
     time: bool,
 
+    /// Review mode: render every fixture photo into this directory with the
+    /// hand-set golden focus point and the detected point drawn on it. The
+    /// normalised distance is encoded in each output filename, so sorting a
+    /// directory surfaces the worst detections first.
+    #[arg(long, value_name = "OUT_DIR")]
+    review: Option<PathBuf>,
+
+    /// Fixture root for --review (contains fixtures.json and the album dirs).
+    #[arg(long, value_name = "DIR", default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../ui/tests/fixtures"))]
+    fixtures: PathBuf,
+
     /// Parity harness: read one raw RGBA frame of the given size from stdin
     /// and print "x y category". Bypasses decode/scale entirely so native
     /// and WASM builds can be compared on identical pixels.
@@ -93,6 +106,14 @@ fn main() {
 
     if let Some(dims) = &cli.raw_rgba {
         run_raw_rgba(dims);
+        return;
+    }
+
+    if let Some(out) = &cli.review {
+        if !cli.files.is_empty() {
+            eprintln!("autofocus: --review ignores positional files (it walks the fixture manifest)");
+        }
+        run_review(&cli.fixtures, out, cli.max_dim);
         return;
     }
 
@@ -215,6 +236,15 @@ fn process_image(
     path: &PathBuf,
     max_dim: u32,
 ) -> Result<(f32, f32, &'static str), Box<dyn std::error::Error>> {
+    process_image_with_orig(path, max_dim).map(|(point, _)| point)
+}
+
+/// Like process_image, but also hands back the full-res oriented image —
+/// review mode draws on it instead of decoding a second time.
+fn process_image_with_orig(
+    path: &PathBuf,
+    max_dim: u32,
+) -> Result<((f32, f32, &'static str), image::DynamicImage), Box<dyn std::error::Error>> {
     // Decode with EXIF orientation applied, so phone photos (orientation 5-8
     // swap width/height) are analysed upright — matching how browsers and the
     // canvas path in the media editor render them.
@@ -294,30 +324,131 @@ fn process_image(
                     if std::env::var_os("AUTOFOCUS_DEBUG").is_some() {
                         eprintln!("zoom gate: crop_ev={:.3} base_ev={:.3} margin={:.2} pairs={} face_like={} skin_cy={:.2}", evidence, base_ev, margin, pairs, face_like, skin_cy);
                     }
-                    if face_like && evidence >= 0.25 && evidence >= base_ev + margin {
+                    // Two verified pairs is structural confirmation the base
+                    // point never had to earn — body texture at crop scale
+                    // manufactures evidence, not paired-eye geometry. With
+                    // >= 2 pairs the crop only has to match base evidence;
+                    // single-pair crops still owe the full margin.
+                    let clears = if pairs >= 2 { evidence >= base_ev } else { evidence >= base_ev + margin };
+                    // Desperation arm: when the incumbent point carries NO
+                    // face evidence at crop scale, a very strong proposal is
+                    // accepted even without resolved pairs (a turned or
+                    // hair-covered head can defeat pair geometry while still
+                    // measuring overwhelmingly face-like). Never fires when
+                    // the incumbent has anything at all.
+                    let desperate = base_ev < 0.05 && evidence >= 0.60;
+                    if (face_like && evidence >= 0.25 && clears) || desperate {
                         let fx = (cx0 as f32 + zx * cw as f32) / w0 as f32;
                         let fy = (cy0 as f32 + zy * ch as f32) / h0 as f32;
-                        return Ok(((fx * 100.0).round() / 100.0, (fy * 100.0).round() / 100.0, category));
+                        return Ok((((fx * 100.0).round() / 100.0, (fy * 100.0).round() / 100.0, category), orig));
                     }
                 }
             }
         }
-        return Ok((bx, by, category));
+        return Ok(((bx, by, category), orig));
     }
 
     let (x, y, category) = detect_focus_cli(rgba.as_raw(), w, h);
 
-    Ok((x, y, category))
+    Ok(((x, y, category), orig))
+}
+
+/// Review mode: annotate every fixture photo with its golden and detected
+/// focus points and write the result under `out`, mirroring the album dirs.
+fn run_review(fixtures: &Path, out: &Path, max_dim: u32) {
+    let manifest_path = fixtures.join("fixtures.json");
+    let raw = match std::fs::read_to_string(&manifest_path) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("autofocus: cannot read {}: {e}", manifest_path.display());
+            process::exit(1);
+        }
+    };
+    let manifest: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("autofocus: {} is not valid JSON: {e}", manifest_path.display());
+            process::exit(1);
+        }
+    };
+
+    /// Long edge of the written review copies — big enough to judge a face,
+    /// small enough that the whole directory stays skimmable.
+    const REVIEW_DIM: u32 = 1200;
+
+    let mut any_error = false;
+    let mut n = 0usize;
+    let mut sum = 0.0f32;
+
+    let albums = manifest["albums"].as_object().cloned().unwrap_or_default();
+    for (album, entry) in &albums {
+        let Some(photos) = entry["photos"].as_array() else { continue };
+        let out_dir = out.join(album);
+        if let Err(e) = std::fs::create_dir_all(&out_dir) {
+            eprintln!("autofocus: cannot create {}: {e}", out_dir.display());
+            process::exit(1);
+        }
+        for p in photos {
+            let file = p["file"].as_str().unwrap_or_default();
+            let gx = p["focus"]["x"].as_f64().unwrap_or(0.5) as f32;
+            let gy = p["focus"]["y"].as_f64().unwrap_or(0.5) as f32;
+            let src = fixtures.join(album).join(file);
+
+            let ((dx, dy, _category), orig) = match process_image_with_orig(&src, max_dim) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("{}/{file}: ERROR {e}", album);
+                    any_error = true;
+                    continue;
+                }
+            };
+
+            let dist = ((dx - gx).powi(2) + (dy - gy).powi(2)).sqrt();
+
+            // Downscale first so marker strokes are uniform across the set.
+            let scale = (REVIEW_DIM as f32 / orig.width().max(orig.height()) as f32).min(1.0);
+            let rw = (orig.width() as f32 * scale).round() as u32;
+            let rh = (orig.height() as f32 * scale).round() as u32;
+            let mut canvas = orig
+                .resize_exact(rw, rh, FilterType::Triangle)
+                .to_rgba8();
+            render::draw_comparison(&mut canvas, (gx, gy), (dx, dy));
+
+            let out_file = out_dir.join(format!("d{dist:.3}-{file}"));
+            let write = std::fs::File::create(&out_file).map_err(|e| e.to_string()).and_then(|f| {
+                let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 85);
+                // JPEG has no alpha channel; the markers are opaque anyway.
+                let rgb = image::DynamicImage::ImageRgba8(canvas).to_rgb8();
+                enc.encode_image(&rgb).map_err(|e| e.to_string())
+            });
+            if let Err(e) = write {
+                eprintln!("{}/{file}: WRITE ERROR {e}", album);
+                any_error = true;
+                continue;
+            }
+
+            println!("{album}/{file}: d={dist:.3}");
+            n += 1;
+            sum += dist;
+        }
+    }
+
+    if n > 0 {
+        println!("reviewed {n} photos, mean distance {:.4} -> {}", sum / n as f32, out.display());
+    }
+    if any_error {
+        process::exit(1);
+    }
 }
 
 /// Bounding box (normalised) of the topmost skin cluster: seed at the
 /// skin block with the smallest cy, extended downward while rows stay
 /// connected. Faces are the highest skin mass in almost all photos.
 fn topmost_skin_region(blocks: &[(f32, f32, f32, f32)]) -> Option<(f32, f32, f32, f32)> {
-    let skin: Vec<(f32, f32, f32)> = blocks.iter().filter(|b| b.2 >= 0.30).map(|b| (b.0, b.1, b.3)).collect();
+    let skin: Vec<(f32, f32, f32, f32)> = blocks.iter().filter(|b| b.2 >= 0.30).map(|b| (b.0, b.1, b.3, b.2)).collect();
     if skin.is_empty() { return None; }
     let seed = *skin.iter().min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())?;
-    let mut members: Vec<(f32, f32, f32)> = vec![seed];
+    let mut members: Vec<(f32, f32, f32, f32)> = vec![seed];
     let mut used = vec![false; skin.len()];
     loop {
         let mut grew = false;
@@ -330,8 +461,28 @@ fn topmost_skin_region(blocks: &[(f32, f32, f32, f32)]) -> Option<(f32, f32, f32
         if !grew { break; }
     }
     // Proposal-quality guards — keep in sync with topmost_skin_bbox in lib.rs.
-    if members.len() < 3 { return None; }
-    if !members.iter().any(|m| m.2 >= 0.08) { return None; }
+    // 2, not 3: a distant face at 256px is often two skin blocks. The crop
+    // gates (pair geometry, mouth band, brow co-location) do the real
+    // filtering; this guard only screens degenerate one-block regions.
+    if members.len() < 2 { return None; }
+    // Eye-band OR strong skin: a small real face at 256px can peak as low as
+    // 0.06 eye-band, and a *distant* head can show none at all — but a real
+    // head is strong skin (>= 0.55), while the warm-sky false clusters this
+    // guard exists for read weak. The crop gates (pair geometry, mouth band,
+    // brow co-location) remain the deciding filter either way.
+    if !members.iter().any(|m| m.2 >= 0.05 || m.3 >= 0.55) { return None; }
+    // Shape guard: a head cluster is compact; a raised arm is a one-block
+    // sliver (measured ~10:1) whose hand/bracelet manufactures pair geometry
+    // at crop scale. Reject extreme aspect ratios before the crop gates ever
+    // see them. 3.5 keeps real narrow heads (measured up to ~2.3).
+    {
+        let bw = members.iter().map(|m| m.0).fold(f32::MIN, f32::max)
+            - members.iter().map(|m| m.0).fold(f32::MAX, f32::min);
+        let bh = members.iter().map(|m| m.1).fold(f32::MIN, f32::max)
+            - members.iter().map(|m| m.1).fold(f32::MAX, f32::min);
+        let (long, short) = (bw.max(bh), bw.min(bh).max(0.03));
+        if long / short > 3.5 { return None; }
+    }
     let x0 = members.iter().map(|m| m.0).fold(f32::MAX, f32::min);
     let x1 = members.iter().map(|m| m.0).fold(f32::MIN, f32::max);
     let y0 = members.iter().map(|m| m.1).fold(f32::MAX, f32::min);

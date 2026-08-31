@@ -22,16 +22,16 @@ const BASELINE_MEAN: &[(&str, f32)] = &[
     ("album-02", 0.050),
     ("album-03", 0.111),
     ("album-04", 0.020),
-    ("album-05", 0.202),
+    ("album-05", 0.207),
     ("album-06", 0.034),
-    ("album-07", 0.333),
-    ("album-08", 0.226),
-    ("album-09", 0.030),
-    ("album-10", 0.032),
+    ("album-07", 0.106),
+    ("album-08", 0.218),
+    ("album-09", 0.027),
+    ("album-10", 0.030),
 ];
-const BASELINE_OVERALL_MEAN: f32 = 0.117;
-/// No single photo may drift beyond this (measured max: 0.505).
-const WORST_CASE: f32 = 0.55;
+const BASELINE_OVERALL_MEAN: f32 = 0.088;
+/// No single photo may drift beyond this (measured max: 0.381).
+const WORST_CASE: f32 = 0.45;
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../ui/tests/fixtures")

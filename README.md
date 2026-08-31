@@ -65,6 +65,20 @@ cd rust && wasm-pack build --target web --out-dir <app>/public/assets/wasm/autof
 cd rust && cargo run --release -- path/to/photo.jpg
 ```
 
+**Reviewing fixture accuracy:**
+
+Render every golden fixture with the hand-placed focus point (green ring)
+and the detected point (orange crosshair) drawn on the photo, a line
+connecting them, and the distance encoded in the filename so a reverse
+directory sort surfaces the worst detections:
+
+```bash
+cd rust && cargo run --release -- --review target/review
+```
+
+Output mirrors the `<album>/<file>` fixture layout under `target/` (already
+gitignored — the photos are not MIT-licensed, keep renders out of commits).
+
 **Rust (as a library):**
 
 ```rust

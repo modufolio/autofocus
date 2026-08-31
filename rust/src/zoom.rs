@@ -155,11 +155,11 @@ pub(crate) fn eye_pairs_core(rad: &[f32], w: usize, h: usize) -> Vec<EyePair> {
 /// Topmost connected skin cluster bbox (normalised) over BlockMeta —
 /// shared by the CLI zoom flow and the WASM zoom_region export.
 pub(crate) fn topmost_skin_bbox(blocks: &[BlockMeta], w: usize, h: usize) -> Option<(f32, f32, f32, f32)> {
-    let skin: Vec<(f32, f32, f32)> = blocks.iter().filter(|b| b.skin_density >= 0.30)
-        .map(|b| (b.cx / w as f32, b.cy / h as f32, b.eye_band)).collect();
+    let skin: Vec<(f32, f32, f32, f32)> = blocks.iter().filter(|b| b.skin_density >= 0.30)
+        .map(|b| (b.cx / w as f32, b.cy / h as f32, b.eye_band, b.skin_density)).collect();
     if skin.is_empty() { return None; }
     let seed = *skin.iter().min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())?;
-    let mut members: Vec<(f32, f32, f32)> = vec![seed];
+    let mut members: Vec<(f32, f32, f32, f32)> = vec![seed];
     let mut used = vec![false; skin.len()];
     loop {
         let mut grew = false;
@@ -175,8 +175,28 @@ pub(crate) fn topmost_skin_bbox(blocks: &[BlockMeta], w: usize, h: usize) -> Opt
     // eye texture somewhere (a warm sky cluster: maxEye 0.00 vs a real
     // face cluster: 0.37) and is bigger than a single block
     // (gorilla's degenerate 1-block region).
-    if members.len() < 3 { return None; }
-    if !members.iter().any(|m| m.2 >= 0.08) { return None; }
+    // 2, not 3: a distant face at 256px is often two skin blocks. The crop
+    // gates (pair geometry, mouth band, brow co-location) do the real
+    // filtering; this guard only screens degenerate one-block regions.
+    if members.len() < 2 { return None; }
+    // Eye-band OR strong skin: a small real face at 256px can peak as low as
+    // 0.06 eye-band, and a *distant* head can show none at all — but a real
+    // head is strong skin (>= 0.55), while the warm-sky false clusters this
+    // guard exists for read weak. The crop gates (pair geometry, mouth band,
+    // brow co-location) remain the deciding filter either way.
+    if !members.iter().any(|m| m.2 >= 0.05 || m.3 >= 0.55) { return None; }
+    // Shape guard: a head cluster is compact; a raised arm is a one-block
+    // sliver (measured ~10:1) whose hand/bracelet manufactures pair geometry
+    // at crop scale. Reject extreme aspect ratios before the crop gates ever
+    // see them. 3.5 keeps real narrow heads (measured up to ~2.3).
+    {
+        let bw = members.iter().map(|m| m.0).fold(f32::MIN, f32::max)
+            - members.iter().map(|m| m.0).fold(f32::MAX, f32::min);
+        let bh = members.iter().map(|m| m.1).fold(f32::MIN, f32::max)
+            - members.iter().map(|m| m.1).fold(f32::MAX, f32::min);
+        let (long, short) = (bw.max(bh), bw.min(bh).max(0.03));
+        if long / short > 3.5 { return None; }
+    }
     let x0 = members.iter().map(|m| m.0).fold(f32::MAX, f32::min);
     let y0 = members.iter().map(|m| m.1).fold(f32::MAX, f32::min);
     let x1 = members.iter().map(|m| m.0).fold(f32::MIN, f32::max);
