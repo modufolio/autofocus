@@ -1,7 +1,7 @@
 //! The panel persists detect_features output into the image_features table,
 //! so the payload shape is a storage contract, not just a debug string.
 
-use autofocus_wasm::detect_features;
+use autofocus::detect_features;
 
 /// A synthetic image: dark left half, bright right half, 64x64.
 fn synthetic(w: usize, h: usize) -> Vec<u8> {
@@ -67,7 +67,7 @@ fn focus_point_matches_detect_focus() {
     // The stored features row must describe the same point detect_focus
     // returns — the two exports share one pipeline by construction.
     let img = synthetic(96, 96);
-    let point = autofocus_wasm::detect_focus_cli(&img, 96, 96);
+    let point = autofocus::detect_focus_cli(&img, 96, 96);
     let v: serde_json::Value =
         serde_json::from_str(&detect_features(&img, 96, 96)).unwrap();
 

@@ -7,10 +7,10 @@ fn main() {
     let w = (w0 as f32 * scale).round() as u32;
     let h = (h0 as f32 * scale).round() as u32;
     let rgba = img.resize_exact(w, h, image::imageops::FilterType::Nearest).to_rgba8();
-    let n = autofocus_wasm::radial_eye_pairs(rgba.as_raw(), w, h);
-    let ys = autofocus_wasm::radial_eye_pair_ys(rgba.as_raw(), w, h);
+    let n = autofocus::radial_eye_pairs(rgba.as_raw(), w, h);
+    let ys = autofocus::radial_eye_pair_ys(rgba.as_raw(), w, h);
     println!("pairs: {n}  pair_ys: {ys:?}");
-    for (x, y, v) in autofocus_wasm::debug_radial_peaks(rgba.as_raw(), w, h, 6) {
+    for (x, y, v) in autofocus::debug_radial_peaks(rgba.as_raw(), w, h, 6) {
         println!("  radial peak ({x:.2},{y:.2}) v={v:.2}");
     }
 }

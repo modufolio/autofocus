@@ -15,7 +15,7 @@
 let _wasmMod = null
 
 /**
- * Candidate directories for autofocus_wasm.js + autofocus_wasm_bg.wasm,
+ * Candidate directories for autofocus.js + autofocus_bg.wasm,
  * tried in order:
  *  1. globalThis.AUTOFOCUS_WASM_BASE — explicit host override.
  *  2. The wasm/ directory shipped inside the npm package (module-relative,
@@ -44,12 +44,12 @@ const _wasmReady = (async () => {
   const bases = wasmBases()
   for (const base of bases) {
     try {
-      const mod = await import(/* @vite-ignore */ base + 'autofocus_wasm.js')
+      const mod = await import(/* @vite-ignore */ base + 'autofocus.js')
       // wasm-bindgen ≥0.2.93 deprecates positional init args
-      await mod.default({ module_or_path: base + 'autofocus_wasm_bg.wasm' })
+      await mod.default({ module_or_path: base + 'autofocus_bg.wasm' })
       _wasmMod = mod
       // Older builds predate build_version() — a missing tag means the browser
-      // cached a stale autofocus_wasm_bg.wasm and needs a hard refresh.
+      // cached a stale autofocus_bg.wasm and needs a hard refresh.
       if (typeof mod.build_version !== 'function') {
         console.warn('[AutoFocus] stale cached WASM build — hard-refresh')
       }

@@ -33,7 +33,7 @@ as WASM to every visitor.
 
 ## Layout
 
-- `rust/` — the detector crate (`autofocus_wasm`): signal extraction
+- `rust/` — the detector crate (`autofocus`): signal extraction
   (`features`, `saliency`, `segments`), scene classification (`classify`,
   `rules`, `weights`), refinement (`refine`, `face_region`, `zoom`), and a
   native CLI for batch analysis. `cdylib + rlib`, wasm-bindgen API.
@@ -51,9 +51,10 @@ const { point } = await detectFocus(imgElement)    // → { x, y } in [0,1]
 const features  = await detectFeatures(imgElement) // → point + category + image features
 ```
 
-The WASM module is fetched at runtime from your app's
-`/assets/wasm/autofocus/` and is deliberately not bundled in the npm package.
-Build it per app:
+The WASM module ships inside the npm package and loads automatically. To
+self-host it elsewhere instead, set `globalThis.AUTOFOCUS_WASM_BASE` to the
+directory URL holding the two `wasm/` files, or copy them to the legacy
+fallback location `/assets/wasm/autofocus/`:
 
 ```bash
 cd rust && wasm-pack build --target web --out-dir <app>/public/assets/wasm/autofocus
@@ -94,7 +95,7 @@ cd rust && cargo run --release -- --eval path/to/dataset --review target/review-
 **Rust (as a library):**
 
 ```rust
-let (x, y, scene) = autofocus_wasm::detect_focus_cli(&rgba, width, height);
+let (x, y, scene) = autofocus::detect_focus_cli(&rgba, width, height);
 ```
 
 ## How it is used

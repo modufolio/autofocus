@@ -1,6 +1,6 @@
 {
   "name": "@modufolio/autofocus",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Content-aware crop focus for photography sites \u2014 a Rust/WASM focal-point detector that keeps the subject in the frame.",
   "license": "MIT",
   "type": "module",
@@ -30,10 +30,10 @@
   },
   "files": [
     "dist",
-    "wasm/autofocus_wasm.js",
-    "wasm/autofocus_wasm_bg.wasm",
-    "wasm/autofocus_wasm.d.ts",
-    "wasm/autofocus_wasm_bg.wasm.d.ts",
+    "wasm/autofocus.js",
+    "wasm/autofocus_bg.wasm",
+    "wasm/autofocus.d.ts",
+    "wasm/autofocus_bg.wasm.d.ts",
     "README.md"
   ],
   "types": "./dist/index.d.ts",

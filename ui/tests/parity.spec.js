@@ -26,7 +26,7 @@ const FIXTURES = join(__dir, 'fixtures')
 const CLI = join(__dir, '../../rust/target/release/autofocus')
 const WASM_DIR = join(__dir, '../wasm-node')
 
-const ready = existsSync(CLI) && existsSync(join(WASM_DIR, 'autofocus_wasm.js'))
+const ready = existsSync(CLI) && existsSync(join(WASM_DIR, 'autofocus.js'))
 
 const MAX_DIM = 256
 /** The builds agree to f32 precision; the only noise is the CLI's decimal
@@ -59,7 +59,7 @@ function nativePoint(rgba, w, h) {
 
 describe.skipIf(!ready)('native ↔ wasm parity (run `npm run test:parity` to build both)', () => {
   const require = createRequire(import.meta.url)
-  const wasm = ready ? require(join(WASM_DIR, 'autofocus_wasm.js')) : null
+  const wasm = ready ? require(join(WASM_DIR, 'autofocus.js')) : null
 
   // The committed corpus only (fixtures.json), not a directory glob:
   // external golden sets (see `autofocus --eval`) may sit next to the album

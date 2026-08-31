@@ -29,7 +29,7 @@ use clap::{Parser, ValueEnum};
 use image::imageops::FilterType;
 
 // Pull in the core detection function from the library.
-use autofocus_wasm::{detect_focus_cli, detect_focus_cli_blocks, crop_face_evidence, point_evidence, radial_eye_pair_ys};
+use autofocus::{detect_focus_cli, detect_focus_cli_blocks, crop_face_evidence, point_evidence, radial_eye_pair_ys};
 
 // ---------------------------------------------------------------------------
 //  CLI definition
@@ -235,7 +235,7 @@ fn process_image_features(
     .to_rgba8();
 
     let mut payload: serde_json::Value =
-        serde_json::from_str(&autofocus_wasm::detect_features(rgba.as_raw(), w, h))?;
+        serde_json::from_str(&autofocus::detect_features(rgba.as_raw(), w, h))?;
 
     let (x, y, _) = process_image(path, max_dim)?;
     payload["x"] = serde_json::json!(x);
@@ -668,6 +668,6 @@ fn run_raw_rgba(dims: &str) {
         process::exit(1);
     }
 
-    let (x, y, category) = autofocus_wasm::detect_focus_cli(&buf, w, h);
+    let (x, y, category) = autofocus::detect_focus_cli(&buf, w, h);
     println!("{x} {y} {category}");
 }

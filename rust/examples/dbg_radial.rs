@@ -9,7 +9,7 @@ fn main() {
     let w = (w0 as f32 * scale).round() as u32;
     let h = (h0 as f32 * scale).round() as u32;
     let rgba = img.resize_exact(w, h, FilterType::Nearest).to_rgba8();
-    let peaks = autofocus_wasm::debug_radial_peaks(rgba.as_raw(), w, h, 12);
+    let peaks = autofocus::debug_radial_peaks(rgba.as_raw(), w, h, 12);
     for (x, y, v) in peaks {
         println!("peak {:.2},{:.2}  radial={:.3}", x, y, v);
     }

@@ -1,6 +1,6 @@
 [package]
-name = "autofocus_wasm"
-version = "0.2.0"
+name = "autofocus"
+version = "0.2.1"
 edition = "2021"
 description = "Content-aware focal-point detection for photographs — Rust/WASM + native CLI"
 license = "MIT"
