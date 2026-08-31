@@ -79,6 +79,18 @@ cd rust && cargo run --release -- --review target/review
 Output mirrors the `<album>/<file>` fixture layout under `target/` (already
 gitignored — the photos are not MIT-licensed, keep renders out of commits).
 
+**Evaluating an external dataset:**
+
+Point `--eval` at any directory of photos plus a `focuspoints.json` mapping
+each filename to its hand-set point (`{"img.jpg": {"x": 0.47, "y": 0.49}}`).
+Prints per-photo distances and the mean; add `--review` to also render the
+annotated comparisons. This is how golden sets that cannot be committed are
+measured:
+
+```bash
+cd rust && cargo run --release -- --eval path/to/dataset --review target/review-dataset
+```
+
 **Rust (as a library):**
 
 ```rust

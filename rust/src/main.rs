@@ -76,6 +76,15 @@ struct Cli {
     #[arg(long, value_name = "DIR", default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../ui/tests/fixtures"))]
     fixtures: PathBuf,
 
+    /// Evaluate an external dataset: a directory of photos plus a
+    /// focuspoints.json mapping each filename to its hand-set point
+    /// ({"img.jpg": {"x": 0.47, "y": 0.49}, …}). Prints the per-photo
+    /// distance and the mean; combine with --review OUT_DIR to also render
+    /// the annotated comparison photos. For golden sets that cannot live in
+    /// the committed fixture tree.
+    #[arg(long, value_name = "DIR", conflicts_with = "fixtures")]
+    eval: Option<PathBuf>,
+
     /// Parity harness: read one raw RGBA frame of the given size from stdin
     /// and print "x y category". Bypasses decode/scale entirely so native
     /// and WASM builds can be compared on identical pixels.
@@ -106,6 +115,14 @@ fn main() {
 
     if let Some(dims) = &cli.raw_rgba {
         run_raw_rgba(dims);
+        return;
+    }
+
+    if let Some(dir) = &cli.eval {
+        if !cli.files.is_empty() {
+            eprintln!("autofocus: --eval ignores positional files (it walks focuspoints.json)");
+        }
+        run_eval(dir, cli.review.as_deref(), cli.max_dim);
         return;
     }
 
@@ -242,7 +259,7 @@ fn process_image(
 /// Like process_image, but also hands back the full-res oriented image —
 /// review mode draws on it instead of decoding a second time.
 fn process_image_with_orig(
-    path: &PathBuf,
+    path: &Path,
     max_dim: u32,
 ) -> Result<((f32, f32, &'static str), image::DynamicImage), Box<dyn std::error::Error>> {
     // Decode with EXIF orientation applied, so phone photos (orientation 5-8
@@ -335,8 +352,13 @@ fn process_image_with_orig(
                     // accepted even without resolved pairs (a turned or
                     // hair-covered head can defeat pair geometry while still
                     // measuring overwhelmingly face-like). Never fires when
-                    // the incumbent has anything at all.
-                    let desperate = base_ev < 0.05 && evidence >= 0.60;
+                    // the incumbent has anything at all. 0.35 swept over the
+                    // full fixture corpus: only crops with a zero-evidence
+                    // incumbent reach this arm at all, and the two that do
+                    // are both real faces whose hooded/averted eyes never
+                    // resolve pair geometry even at head-crop scale.
+                    let desp = std::env::var("AF_DESPERATE").ok().and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.35);
+                    let desperate = base_ev < 0.05 && evidence >= desp;
                     if (face_like && evidence >= 0.25 && clears) || desperate {
                         let fx = (cx0 as f32 + zx * cw as f32) / w0 as f32;
                         let fy = (cy0 as f32 + zy * ch as f32) / h0 as f32;
@@ -372,10 +394,6 @@ fn run_review(fixtures: &Path, out: &Path, max_dim: u32) {
         }
     };
 
-    /// Long edge of the written review copies — big enough to judge a face,
-    /// small enough that the whole directory stays skimmable.
-    const REVIEW_DIM: u32 = 1200;
-
     let mut any_error = false;
     let mut n = 0usize;
     let mut sum = 0.0f32;
@@ -394,47 +412,121 @@ fn run_review(fixtures: &Path, out: &Path, max_dim: u32) {
             let gy = p["focus"]["y"].as_f64().unwrap_or(0.5) as f32;
             let src = fixtures.join(album).join(file);
 
-            let ((dx, dy, _category), orig) = match process_image_with_orig(&src, max_dim) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("{}/{file}: ERROR {e}", album);
-                    any_error = true;
-                    continue;
+            match review_photo(&src, gx, gy, Some(&out_dir), max_dim) {
+                Ok(dist) => {
+                    println!("{album}/{file}: d={dist:.3}");
+                    n += 1;
+                    sum += dist;
                 }
-            };
-
-            let dist = ((dx - gx).powi(2) + (dy - gy).powi(2)).sqrt();
-
-            // Downscale first so marker strokes are uniform across the set.
-            let scale = (REVIEW_DIM as f32 / orig.width().max(orig.height()) as f32).min(1.0);
-            let rw = (orig.width() as f32 * scale).round() as u32;
-            let rh = (orig.height() as f32 * scale).round() as u32;
-            let mut canvas = orig
-                .resize_exact(rw, rh, FilterType::Triangle)
-                .to_rgba8();
-            render::draw_comparison(&mut canvas, (gx, gy), (dx, dy));
-
-            let out_file = out_dir.join(format!("d{dist:.3}-{file}"));
-            let write = std::fs::File::create(&out_file).map_err(|e| e.to_string()).and_then(|f| {
-                let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 85);
-                // JPEG has no alpha channel; the markers are opaque anyway.
-                let rgb = image::DynamicImage::ImageRgba8(canvas).to_rgb8();
-                enc.encode_image(&rgb).map_err(|e| e.to_string())
-            });
-            if let Err(e) = write {
-                eprintln!("{}/{file}: WRITE ERROR {e}", album);
-                any_error = true;
-                continue;
+                Err(e) => {
+                    eprintln!("{}/{file}: {e}", album);
+                    any_error = true;
+                }
             }
-
-            println!("{album}/{file}: d={dist:.3}");
-            n += 1;
-            sum += dist;
         }
     }
 
     if n > 0 {
         println!("reviewed {n} photos, mean distance {:.4} -> {}", sum / n as f32, out.display());
+    }
+    if any_error {
+        process::exit(1);
+    }
+}
+
+/// Detect one golden photo, measure the distance to the hand-set point and,
+/// when `out_dir` is given, write the annotated comparison render there with
+/// the distance encoded in the filename (reverse sort = worst first).
+fn review_photo(src: &Path, gx: f32, gy: f32, out_dir: Option<&Path>, max_dim: u32) -> Result<f32, String> {
+    /// Long edge of the written review copies — big enough to judge a face,
+    /// small enough that the whole directory stays skimmable.
+    const REVIEW_DIM: u32 = 1200;
+
+    let ((dx, dy, _category), orig) =
+        process_image_with_orig(src, max_dim).map_err(|e| format!("ERROR {e}"))?;
+
+    let dist = ((dx - gx).powi(2) + (dy - gy).powi(2)).sqrt();
+
+    if let Some(out_dir) = out_dir {
+        // Downscale first so marker strokes are uniform across the set.
+        let scale = (REVIEW_DIM as f32 / orig.width().max(orig.height()) as f32).min(1.0);
+        let rw = (orig.width() as f32 * scale).round() as u32;
+        let rh = (orig.height() as f32 * scale).round() as u32;
+        let mut canvas = orig
+            .resize_exact(rw, rh, FilterType::Triangle)
+            .to_rgba8();
+        render::draw_comparison(&mut canvas, (gx, gy), (dx, dy));
+
+        let file = src.file_name().unwrap_or_default().to_string_lossy();
+        let out_file = out_dir.join(format!("d{dist:.3}-{file}"));
+        std::fs::File::create(&out_file).map_err(|e| format!("WRITE ERROR {e}")).and_then(|f| {
+            let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 85);
+            // JPEG has no alpha channel; the markers are opaque anyway.
+            let rgb = image::DynamicImage::ImageRgba8(canvas).to_rgb8();
+            enc.encode_image(&rgb).map_err(|e| format!("WRITE ERROR {e}"))
+        })?;
+    }
+
+    Ok(dist)
+}
+
+/// Eval mode: walk an external dataset directory — photos plus a
+/// focuspoints.json of {"file.jpg": {"x": …, "y": …}} — and print per-photo
+/// distances and the mean. With `out`, also render the annotated comparisons.
+fn run_eval(dir: &Path, out: Option<&Path>, max_dim: u32) {
+    let manifest_path = dir.join("focuspoints.json");
+    let raw = match std::fs::read_to_string(&manifest_path) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("autofocus: cannot read {}: {e}", manifest_path.display());
+            process::exit(1);
+        }
+    };
+    let manifest: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("autofocus: {} is not valid JSON: {e}", manifest_path.display());
+            process::exit(1);
+        }
+    };
+    let Some(points) = manifest.as_object() else {
+        eprintln!("autofocus: {} must be an object of filename -> {{x, y}}", manifest_path.display());
+        process::exit(1);
+    };
+
+    if let Some(out) = out {
+        if let Err(e) = std::fs::create_dir_all(out) {
+            eprintln!("autofocus: cannot create {}: {e}", out.display());
+            process::exit(1);
+        }
+    }
+
+    let mut any_error = false;
+    let mut n = 0usize;
+    let mut sum = 0.0f32;
+
+    // BTreeMap-style order: deterministic output regardless of JSON order.
+    let mut files: Vec<&String> = points.keys().collect();
+    files.sort();
+    for file in files {
+        let p = &points[file];
+        let gx = p["x"].as_f64().unwrap_or(0.5) as f32;
+        let gy = p["y"].as_f64().unwrap_or(0.5) as f32;
+        match review_photo(&dir.join(file), gx, gy, out, max_dim) {
+            Ok(dist) => {
+                println!("{file}: d={dist:.3}");
+                n += 1;
+                sum += dist;
+            }
+            Err(e) => {
+                eprintln!("{file}: {e}");
+                any_error = true;
+            }
+        }
+    }
+
+    if n > 0 {
+        println!("evaluated {n} photos, mean distance {:.4}", sum / n as f32);
     }
     if any_error {
         process::exit(1);
