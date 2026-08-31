@@ -20,7 +20,10 @@ mod weights;
 mod zoom;
 
 use classify::{color_snap_gate, pick_smart_weights};
-use features::{analyse_pixels, build_luminance_map, compute_radial_symmetry};
+use features::analyse_pixels;
+// Only debug_radial_peaks uses these, and it is native-only.
+#[cfg(not(target_arch = "wasm32"))]
+use features::{build_luminance_map, compute_radial_symmetry};
 use saliency::saliency_top_peaks;
 use segments::compute_segments_inner;
 
@@ -31,7 +34,7 @@ use zoom::topmost_skin_bbox;
 //  Build version — bump on every algorithm change so the browser console can
 //  prove which build is running (keep AF_BUILD_VERSION in analysis.js equal).
 // ---------------------------------------------------------------------------
-pub const AF_BUILD_VERSION: &str = "2026-08-22-features-export";
+pub const AF_BUILD_VERSION: &str = "2026-08-31-snap-face-veto";
 
 /// Exposed so browser consumers can log which build is loaded:
 /// `[AutoFocus] Rust/WASM backend loaded (build …)`.
